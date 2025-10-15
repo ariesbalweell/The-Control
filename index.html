@@ -1,39 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Control — Base Wallet Manager</title>
-  <link rel="stylesheet" href="style.css" />
-  <script defer src="script.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Control — Base Wallet Automation</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <header>
-      <img src="assets/logo.png" alt="The Control Logo" class="logo" />
-      <h1>The Control</h1>
-      <p class="tagline">Manage Your Base Wallet with Auto Spend Permission</p>
-    </header>
+    <img src="logo.png" alt="The Control Logo" class="logo" />
+    <h1>The Control</h1>
+    <p class="subtitle">Manage Your Base Wallet with Auto Spend Permission</p>
 
-    <main>
-      <div class="wallet-card">
-        <h2>Your Base Wallet</h2>
-        <p><strong>Address:</strong> <span id="wallet-address">0x0000...0000</span></p>
-        <p><strong>Balance:</strong> <span id="wallet-balance">0.00 ETH</span></p>
-        <button id="connect-btn">Connect Wallet (Demo)</button>
-      </div>
+    <button id="connectBtn">🔗 Connect Wallet</button>
 
-      <div class="auto-card">
-        <h2>Auto Spend Permission</h2>
-        <p>Enable automatic transaction approval for trusted dApps.</p>
-        <button id="auto-btn">Activate Auto Permission (Demo)</button>
-        <div id="status" class="status">Status: Inactive</div>
-      </div>
-    </main>
+    <div id="info" class="info">
+      <p>Status: <span id="status">Waiting for connection...</span></p>
+      <p>Universal Account: <span id="account">—</span></p>
+      <p>Sub Account: <span id="subaccount">—</span></p>
+    </div>
+
+    <div class="actions">
+      <button id="createSubBtn">Create Sub Account</button>
+      <button id="permissionBtn">Request Spend Permission</button>
+      <button id="sendTxBtn">Send From Sub Account</button>
+    </div>
 
     <footer>
-      <p>© 2025 The Control — Created by Aries Balweell</p>
+      <p>Built by <strong>Aries Balweell</strong> · Powered by Base ⚡</p>
     </footer>
   </div>
+
+  <!-- Base Account SDK (browser) -->
+  <script src="https://unpkg.com/@base-org/account@latest/dist/index.umd.js"></script>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const accountEl = document.getElementById("account");
+    const subaccountEl = document.getElementById("subaccount");
+    let sdk, provider, universal, sub;
+
+    async function init() {
+      try {
+        sdk = window.BaseAccount.createBaseAccountSDK({
+          appName: "The Control",
+          appLogoUrl: location.origin + "/logo.png",
+          appChainIds: [8453], // Base Mainnet
+        });
+        provider = sdk.getProvider();
+        statusEl.innerText = "SDK loaded. Ready.";
+      } catch (e) {
+        statusEl.innerText = "SDK init failed: " + e.message;
+      }
+    }
+
+    async function connect() {
+      try {
+        const accs = await provider.request({ method: "eth_requestAccounts" });
+        universal = accs[0];
+        accountEl.innerText = universal;
+        statusEl.innerText = "Connected to Base account";
+      } catch (err) {
+        statusEl.innerText = "Connect failed: " + err.message;
+      }
+    }
+
+    async function createSub() {
+      try {
+        const res = await provider.request({
+          method: "wallet_addSubAccount",
+          params: [{ account: { type: "create" }, domain: location.origin }],
+        });
+        sub = res.address || res;
+        subaccountEl.innerText = sub;
+        statusEl.innerText = "Sub Account created: " + sub;
+      } catch (e) {
+        statusEl.innerText = "Create sub account failed: " + e.message;
+      }
+    }
+
+    async function requestPermission() {
+      try {
+        if (!sub) return (statusEl.innerText = "No sub account yet.");
+        const res = await provider.request({
+          method: "wallet_requestSpendPermission",
+          params: [{
+            account: universal,
+            spender: sub,
+            amount: "0x2386F26FC10000", // 0.01 ETH in wei
+            domain: location.origin,
+          }],
+        });
+        statusEl.innerText = "Spend permission granted!";
+      } catch (e) {
+        statusEl.innerText = "Permission failed: " + e.message;
+      }
+    }
+
+    async function sendTx() {
+      try {
+        if (!sub) return (statusEl.innerText = "No sub account to send from.");
+        const res = await provider.request({
+          method: "wallet_sendCalls",
+          params: [{
+            version: "2.0",
+            atomicRequired: true,
+            chainId: "0x2105",
+            from: sub,
+            calls: [{ to: sub, data: "0x", value: "0x0" }],
+          }],
+        });
+        statusEl.innerText = "Transaction sent: " + JSON.stringify(res);
+      } catch (e) {
+        statusEl.innerText = "Tx failed: " + e.message;
+      }
+    }
+
+    // Event listeners
+    document.getElementById("connectBtn").onclick = connect;
+    document.getElementById("createSubBtn").onclick = createSub;
+    document.getElementById("permissionBtn").onclick = requestPermission;
+    document.getElementById("sendTxBtn").onclick = sendTx;
+
+    init();
+  </script>
 </body>
 </html>
