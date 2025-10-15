@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Control — Base Wallet Manager</title>
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img src="assets/logo.png" alt="The Control Logo" class="logo" />
+      <h1>The Control</h1>
+      <p class="tagline">Manage Your Base Wallet with Auto Spend Permission</p>
+    </header>
+
+    <main>
+      <div class="wallet-card">
+        <h2>Your Base Wallet</h2>
+        <p><strong>Address:</strong> <span id="wallet-address">0x0000...0000</span></p>
+        <p><strong>Balance:</strong> <span id="wallet-balance">0.00 ETH</span></p>
+        <button id="connect-btn">Connect Wallet (Demo)</button>
+      </div>
+
+      <div class="auto-card">
+        <h2>Auto Spend Permission</h2>
+        <p>Enable automatic transaction approval for trusted dApps.</p>
+        <button id="auto-btn">Activate Auto Permission (Demo)</button>
+        <div id="status" class="status">Status: Inactive</div>
+      </div>
+    </main>
+
+    <footer>
+      <p>© 2025 The Control — Created by Aries Balweell</p>
+    </footer>
+  </div>
+</body>
+</html>
